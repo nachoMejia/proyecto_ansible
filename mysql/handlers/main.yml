@@ -1,0 +1,4 @@
+- name: Reiniciar mariadb
+  systemd:
+    name: "{{ mysql_service }}"
+    state: restarted

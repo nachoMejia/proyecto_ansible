@@ -1,0 +1,3 @@
+mysql_package: mysql
+mysql_service: mariadb
+mysql_root_password: pruebaSql

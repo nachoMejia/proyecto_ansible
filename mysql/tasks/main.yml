@@ -1,0 +1,23 @@
+- name: Instalar mysql
+  zypper:
+    name: "{{ mysql_package }}"
+    state: present
+
+- name: iniciar y habilitar arranque mariadb
+  systemd:
+    name: "{{ mysql_service }}"
+    enabled: yes
+    state : started
+
+- name: Revisar si root ya tiene contraseña
+  command: mariadb -u root -e "SELECT 1"
+  register: root_sin_pass
+  failed_when: false
+  changed_when: false
+
+- name: Establecer contraseña de root en mariadb
+  command: >
+    mariadb -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ mysql_root_password }}'; FLUSH PRIVILEGES;"
+  when: root_sin_pass.rc == 0
+  no_log: true
+  notify: Reiniciar mariadb
