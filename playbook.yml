@@ -1,0 +1,8 @@
+- name: Deploy Remoto de lamp y samba
+  hosts: servidor
+  become: yes
+  roles:
+    - apache
+    - php
+    - mysql
+    - samba
