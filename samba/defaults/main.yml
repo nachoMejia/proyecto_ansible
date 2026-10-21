@@ -1,0 +1,5 @@
+samba_package:  samba 
+samba_service:  smb
+nuevo_usuario:  luis
+nuevo_usuario_password: luis26
+samba_password: luchito

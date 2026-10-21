@@ -1,0 +1,4 @@
+- name: Reiniciar samba
+  systemd:
+    name: "{{ samba_service }}"
+    state: restarted

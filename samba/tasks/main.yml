@@ -1,0 +1,49 @@
+- name: Instalar servicio samba
+  zypper:
+    name: "{{ samba_package }}"
+    state: present
+
+- name: crear recurso/directorio compartido
+  ansible.builtin.file:
+    path: /opt/aso
+    state: directory
+    owner: "{{ nuevo_usuario }}"
+    group: users
+    mode: '0644'
+
+- name: copiar archivo de config smb
+  template:
+    src: /etc/ansible/proyecto_ansible/smb.conf
+    dest: /etc/samba/smb.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reiniciar samba
+
+- name: iniciar y habilitar desde el arranque samba
+  systemd:
+      name: "{{ samba_service }}"
+      enabled: yes
+      state: started
+
+- name: Crear nuevo usuario en linux
+  ansible.builtin.user:
+    name: "{{ nuevo_usuario }}"
+    password: "{{ nuevo_usuario_password | password_hash('sha512') }}"
+    shell: /bin/bash
+    create_home: yes
+    state: present
+  no_log: false
+
+- name: Revisar si el usuario ya existe en samba
+  command: pdbedit -L -u {{ nuevo_usuario }}
+  register: samba_user_check
+  failed_when: false
+  changed_when: false
+
+- name: Crear usuario en samba
+  command: smbpasswd -a -s {{ nuevo_usuario }}
+  args:
+    stdin: "{{ samba_password }}\n{{ samba_password }}"
+  when: samba_user_check.rc != 0
+  no_log: true
