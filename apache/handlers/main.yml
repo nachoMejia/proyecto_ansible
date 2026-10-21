@@ -1,0 +1,4 @@
+- name: Reiniciar el servicio apache
+  systemd:
+    name: "{{ apache2_service }}"
+    state:  restarted
