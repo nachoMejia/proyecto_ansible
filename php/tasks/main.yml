@@ -1,0 +1,15 @@
+- name: Instalar php8
+  zypper:
+    name: "{{ php8_package }}"
+    state: present
+
+- name: Instalar el modulo php-mysql
+  zypper:
+    name: "{{ php_mysql_package }}"
+    state: present
+
+- name: Instalar phpMyAdmin
+  zypper: 
+    name: "{{ phpMyAdmin_package }}"
+    state: present
+  notify: Reiniciar apache2

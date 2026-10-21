@@ -1,0 +1,4 @@
+php8_package: php8
+php_mysql_package: php8-mysql
+phpMyAdmin_package: phpMyAdmin
+apache_service: apache2
