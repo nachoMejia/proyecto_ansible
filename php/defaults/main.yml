@@ -4,3 +4,11 @@ php_mysql_package: php8-mysql
 phpMyAdmin_package: phpMyAdmin
 phpMyAdmin_apache_package: phpMyAdmin-apache
 apache_service: apache2
+
+# Contrato que consume el rol instalador para la transacción de paquetes.
+php_paquetes:
+  - "{{ php8_package }}"
+  - "{{ php_apache_package }}"
+  - "{{ php_mysql_package }}"
+  - "{{ phpMyAdmin_package }}"
+  - "{{ phpMyAdmin_apache_package }}"
