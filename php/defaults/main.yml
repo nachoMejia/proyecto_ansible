@@ -2,4 +2,5 @@ php8_package: php8
 php_apache_package: apache2-mod_php8
 php_mysql_package: php8-mysql
 phpMyAdmin_package: phpMyAdmin
+phpMyAdmin_apache_package: phpMyAdmin-apache
 apache_service: apache2

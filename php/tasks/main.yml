@@ -5,5 +5,6 @@
       - "{{ php_apache_package }}"
       - "{{ php_mysql_package }}"
       - "{{ phpMyAdmin_package }}"
+      - "{{ phpMyAdmin_apache_package }}"
     state: present
   notify: Reiniciar apache2
