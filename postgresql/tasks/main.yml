@@ -1,0 +1,57 @@
+---
+- name: "[PGSQL] Iniciar y habilitar PostgreSQL (initdb automatico)"
+  ansible.builtin.systemd_service:
+    name: "{{ postgresql_servicio }}"
+    state: started
+    enabled: true
+
+- name: "[PGSQL] Generar certificado SSL autofirmado (solo la primera vez)"
+  ansible.builtin.shell: |
+    set -e
+    umask 077
+    openssl req -new -x509 -nodes -days {{ postgresql_ssl_dias }} \
+      -newkey rsa:2048 -subj "/CN={{ postgresql_ssl_cn }}" \
+      -keyout server.key -out server.crt 2>/dev/null
+    chown postgres:postgres server.key server.crt
+    chmod 600 server.key
+  args:
+    chdir: "{{ postgresql_data }}"
+    creates: "{{ postgresql_data }}/server.crt"
+  notify: Reiniciar postgresql
+
+
+- name: "[PGSQL] Configurar postgresql.conf"
+  ansible.builtin.blockinfile:
+    path: "{{ postgresql_data }}/postgresql.conf"
+    marker: "# {mark} ANSIBLE - CONFIGURACION PGSQL"
+    block: |
+      listen_addresses = '*'
+      port = {{ postgresql_puerto }}
+      ssl = on
+      password_encryption = 'scram-sha-256'
+  notify: Reiniciar postgresql
+
+- name: "[PGSQL] Configurar pg_hba.conf (acceso remoto con SSL)"
+  ansible.builtin.blockinfile:
+    path: "{{ postgresql_data }}/pg_hba.conf"
+    marker: "# {mark} ANSIBLE - ACCESO REMOTO"
+    block: |
+      {% for red in postgresql_redes_remotas %}
+      hostssl all all {{ red }} scram-sha-256
+      {% endfor %}
+  notify: Recargar postgresql
+
+- name: "[PGSQL] Clave de postgres + usuario y base de la aplicacion"
+  ansible.builtin.command:
+    cmd: runuser -u postgres -- psql -X -v ON_ERROR_STOP=1 -d postgres
+    chdir: /
+    stdin: |
+      ALTER USER postgres WITH PASSWORD '{{ postgresql_password | replace("'", "''") }}';
+      SELECT 'CREATE USER {{ postgresql_usuario }} LOGIN'
+        WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '{{ postgresql_usuario }}')\gexec
+      ALTER USER {{ postgresql_usuario }} WITH LOGIN PASSWORD '{{ postgresql_usuario_password | replace("'", "''") }}';
+      SELECT 'CREATE DATABASE {{ postgresql_db }} OWNER {{ postgresql_usuario }}'
+        WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '{{ postgresql_db }}')\gexec
+  register: postgresql_sql
+  changed_when: "'CREATE USER' in postgresql_sql.stdout or 'CREATE DATABASE' in postgresql_sql.stdout"
+  no_log: true

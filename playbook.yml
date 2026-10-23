@@ -1,8 +1,10 @@
 - name: Deploy Remoto de lamp y samba
   hosts: servidor
-  become: yes
+  gather_facts: false
   roles:
+    - instalador
     - apache
     - php
     - mysql
     - samba
+    - postgresql

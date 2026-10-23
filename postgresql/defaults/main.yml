@@ -1,0 +1,29 @@
+---
+postgresql_paquetes:
+  - postgresql-server
+  - postgresql
+  - php8-pgsql
+  - openssl
+
+postgresql_servicio: postgresql
+postgresql_firewall_servicios:
+  - postgresql
+
+postgresql_selinux_booleanos:
+  - httpd_can_network_connect_db
+
+postgresql_data: /var/lib/pgsql/data
+postgresql_puerto: 5432
+
+postgresql_password: "{{ vault_postgresql_password }}"
+
+
+postgresql_usuario: aso_pg
+postgresql_usuario_password: "{{ vault_postgresql_usuario_password }}"
+postgresql_db: aso_pg
+
+postgresql_redes_remotas:
+  - 192.168.0.0/24
+
+postgresql_ssl_dias: 3650
+postgresql_ssl_cn: "{{ ansible_host | default(inventory_hostname) }}"

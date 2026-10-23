@@ -1,0 +1,35 @@
+instalador_paquetes:
+  - policycoreutils-python-utils
+
+instalador_zypper_env:
+  ZYPP_PCK_PRELOAD: "1"
+  ZYPP_SINGLE_RPMTRANS: "1"
+
+instalador_zypp_excludedocs: true
+instalador_zypp_conexiones_paralelas: 10
+
+_instalador_roles: "{{ ansible_play_role_names | unique | reject('equalto', 'instalador') | list }}"
+
+instalador_paquetes_todos: >-
+  {{ (instalador_paquetes + query('ansible.builtin.vars', *(_instalador_roles | map('regex_replace', '$', '_paquetes')), default=[]))
+     | flatten | unique }}
+
+instalador_repos: >-
+  {{ query('ansible.builtin.vars', *(_instalador_roles | map('regex_replace', '$', '_repos')), default=[])
+     | flatten(levels=1) }}
+
+instalador_firewall_servicios: >-
+  {{ query('ansible.builtin.vars', *(_instalador_roles | map('regex_replace', '$', '_firewall_servicios')), default=[])
+     | flatten | unique }}
+
+instalador_firewall_puertos: >-
+  {{ query('ansible.builtin.vars', *(_instalador_roles | map('regex_replace', '$', '_firewall_puertos')), default=[])
+     | flatten | unique }}
+
+instalador_selinux_booleanos: >-
+  {{ query('ansible.builtin.vars', *(_instalador_roles | map('regex_replace', '$', '_selinux_booleanos')), default=[])
+     | flatten | unique }}
+
+instalador_selinux_fcontext: >-
+  {{ query('ansible.builtin.vars', *(_instalador_roles | map('regex_replace', '$', '_selinux_fcontext')), default=[])
+     | flatten(levels=1) }}
