@@ -1,2 +1,6 @@
 [servidor]
-192.168.0.12 ansible_user=root ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+suse-aso      ansible_host=192.168.0.12
+
+[servidor:vars]
+ansible_user=root
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'

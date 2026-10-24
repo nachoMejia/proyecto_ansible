@@ -1,0 +1,20 @@
+---
+ftp_servicio: vsftpd
+
+ftp_usuario: asoftp
+ftp_usuario_password: "{{ vault_ftp_password }}"
+
+ftp_pasv_min: 30000
+ftp_pasv_max: 30100
+
+ftp_paquetes:
+  - vsftpd
+
+ftp_firewall_servicios:
+  - ftp                     
+
+ftp_firewall_puertos:
+  - "{{ ftp_pasv_min }}-{{ ftp_pasv_max }}/tcp"
+
+ftp_selinux_booleanos:
+  - ftpd_full_access       
