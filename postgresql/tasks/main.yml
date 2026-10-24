@@ -19,27 +19,23 @@
     creates: "{{ postgresql_data }}/server.crt"
   notify: Reiniciar postgresql
 
-
-- name: "[PGSQL] Configurar postgresql.conf"
-  ansible.builtin.blockinfile:
-    path: "{{ postgresql_data }}/postgresql.conf"
-    marker: "# {mark} ANSIBLE - CONFIGURACION PGSQL"
-    block: |
-      listen_addresses = '*'
-      port = {{ postgresql_puerto }}
-      ssl = on
-      password_encryption = 'scram-sha-256'
+- name: copiar archivo postgresql.conf
+  ansible.builtin.copy:
+    src: ../../postgresql.conf
+    dest: /var/lib/pgsql/data/postgresql.conf
+    owner: postgres
+    group: postgres
+    mode: '0644'
   notify: Reiniciar postgresql
 
-- name: "[PGSQL] Configurar pg_hba.conf (acceso remoto con SSL)"
-  ansible.builtin.blockinfile:
-    path: "{{ postgresql_data }}/pg_hba.conf"
-    marker: "# {mark} ANSIBLE - ACCESO REMOTO"
-    block: |
-      {% for red in postgresql_redes_remotas %}
-      hostssl all all {{ red }} scram-sha-256
-      {% endfor %}
-  notify: Recargar postgresql
+- name: copiar archivo pg_hba.conf
+  ansible.builtin.copy:
+    src: ../../pg_hba.conf
+    dest: /var/lib/pgsql/data/pg_hba.conf
+    owner: postgres
+    group: postgres
+    mode: '0644'
+  notify: Reiniciar postgresql
 
 - name: "[PGSQL] Clave de postgres + usuario y base de la aplicacion"
   ansible.builtin.command:
@@ -47,11 +43,11 @@
     chdir: /
     stdin: |
       ALTER USER postgres WITH PASSWORD '{{ postgresql_password | replace("'", "''") }}';
-      SELECT 'CREATE USER {{ postgresql_usuario }} LOGIN'
+      SELECT 'CREATE USER {{ postgresql_usuario }} LOGIN SUPERUSER'
         WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '{{ postgresql_usuario }}')\gexec
-      ALTER USER {{ postgresql_usuario }} WITH LOGIN PASSWORD '{{ postgresql_usuario_password | replace("'", "''") }}';
+      ALTER USER {{ postgresql_usuario }} WITH SUPERUSER LOGIN PASSWORD '{{ postgresql_usuario_password | replace("'", "''") }}';
       SELECT 'CREATE DATABASE {{ postgresql_db }} OWNER {{ postgresql_usuario }}'
         WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '{{ postgresql_db }}')\gexec
   register: postgresql_sql
-  changed_when: "'CREATE USER' in postgresql_sql.stdout or 'CREATE DATABASE' in postgresql_sql.stdout"
+  changed_when: "'CREATE ROLE' in postgresql_sql.stdout or 'CREATE DATABASE' in postgresql_sql.stdout"
   no_log: true
