@@ -23,7 +23,7 @@ postgresql_usuario_password: "{{ vault_postgresql_usuario_password }}"
 postgresql_db: aso_pg
 
 postgresql_redes_remotas:
-  - 192.168.0.0/24
+  - "{{ (ansible_host | default(inventory_hostname)) | regex_replace('\\.[0-9]+$', '.0/24') }}"
 
 postgresql_ssl_dias: 3650
 postgresql_ssl_cn: "{{ ansible_host | default(inventory_hostname) }}"

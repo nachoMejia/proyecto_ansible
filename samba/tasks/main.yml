@@ -2,6 +2,15 @@
   zypper:
     name: "{{ samba_package }}"
     state: present
+    
+- name: Crear nuevo usuario en linux
+  ansible.builtin.user:
+    name: "{{ nuevo_usuario }}"
+    password: "{{ nuevo_usuario_password | password_hash('sha512') }}"
+    shell: /bin/bash
+    create_home: yes
+    state: present
+  no_log: false
 
 - name: crear recurso/directorio compartido
   ansible.builtin.file:
@@ -9,11 +18,12 @@
     state: directory
     owner: "{{ nuevo_usuario }}"
     group: users
-    mode: '0644'
+    mode: '0755'             
+    setype: samba_share_t     
 
 - name: copiar archivo de config smb
   template:
-    src: /etc/ansible/proyecto_ansible/smb.conf
+    src: "{{ playbook_dir }}/smb.conf" 
     dest: /etc/samba/smb.conf
     owner: root
     group: root
@@ -25,15 +35,6 @@
       name: "{{ samba_service }}"
       enabled: yes
       state: started
-
-- name: Crear nuevo usuario en linux
-  ansible.builtin.user:
-    name: "{{ nuevo_usuario }}"
-    password: "{{ nuevo_usuario_password | password_hash('sha512') }}"
-    shell: /bin/bash
-    create_home: yes
-    state: present
-  no_log: false
 
 - name: Revisar si el usuario ya existe en samba
   command: pdbedit -L -u {{ nuevo_usuario }}
