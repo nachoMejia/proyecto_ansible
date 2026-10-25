@@ -1,5 +1,5 @@
 samba_package:  samba 
 samba_service:  smb
-nuevo_usuario:  luis
-nuevo_usuario_password: luis26
-samba_password: luchito
+nuevo_usuario:  asosamba
+nuevo_usuario_password: "{{ vault_nuevo_usuario_password }}"
+samba_password: "{{ vault_samba_password }}"
