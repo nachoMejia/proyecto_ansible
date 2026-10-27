@@ -1,5 +1,4 @@
-samba_paquetes: 
-  - samba
+samba_package: samba
 samba_service:  smb
 nuevo_usuario:  asosamba
 nuevo_usuario_password: "{{ vault_nuevo_usuario_password }}"

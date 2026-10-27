@@ -1,4 +1,3 @@
-mysql_paquetes: 
-  - mysql
+mysql_package: mysql
 mysql_service: mariadb
 mysql_root_password: "{{ vault_mysql_root_password }}"
