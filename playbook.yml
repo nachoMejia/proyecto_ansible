@@ -2,7 +2,7 @@
   hosts: servidor
   gather_facts: false
   roles:
-    - instalador
+    - preparacion
     - apache
     - php
     - mysql

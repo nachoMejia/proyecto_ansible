@@ -1,8 +1,4 @@
-- name: Instalar servicio samba
-  zypper:
-    name: "{{ samba_package }}"
-    state: present
-    
+
 - name: Crear nuevo usuario en linux
   ansible.builtin.user:
     name: "{{ nuevo_usuario }}"
@@ -12,7 +8,7 @@
     state: present
   no_log: false
 
-- name: crear recurso/directorio compartido
+- name: Crear recurso/directorio compartido
   ansible.builtin.file:
     path: /opt/aso
     state: directory
@@ -21,7 +17,7 @@
     mode: '0755'             
     setype: samba_share_t     
 
-- name: copiar archivo de config smb
+- name: Copiar archivo de config smb
   template:
     src: "{{ playbook_dir }}/smb.conf" 
     dest: /etc/samba/smb.conf
@@ -30,7 +26,7 @@
     mode: '0644'
   notify: Reiniciar samba
 
-- name: iniciar y habilitar desde el arranque samba
+- name: Iniciar y habilitar desde el arranque samba
   systemd:
       name: "{{ samba_service }}"
       enabled: yes
