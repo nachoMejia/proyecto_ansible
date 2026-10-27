@@ -1,9 +1,4 @@
-- name: Instalar mysql
-  zypper:
-    name: "{{ mysql_package }}"
-    state: present
-
-- name: iniciar y habilitar arranque mariadb
+- name: Iniciar y habilitar arranque mariadb
   systemd:
     name: "{{ mysql_service }}"
     enabled: yes

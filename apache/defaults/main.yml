@@ -1,7 +1,7 @@
 apache2_package: apache2
 apache2_service: apache2
 
-# Contrato que consume el rol instalador para la transacción de paquetes y el firewall.
+# Contrato que consume el rol preparacion para la transacción de paquetes y el firewall.
 apache_paquetes:
   - "{{ apache2_package }}"
 apache_firewall_servicios:

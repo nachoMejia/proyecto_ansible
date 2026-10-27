@@ -1,0 +1,33 @@
+# Rol preparacion - variables
+# Cada rol declara <rol>_paquetes, <rol>_firewall_servicios, <rol>_firewall_puertos
+# y <rol>_selinux_booleanos; preparacion los junta y los aplica en una sola pasada.
+# Aqui se completa ese contrato para mysql y samba, que no lo definen.
+---
+preparacion_paquetes_base:
+  - policycoreutils-python-utils
+preparacion_zypper_env:
+  ZYPP_PCK_PRELOAD: "1"
+  ZYPP_SINGLE_RPMTRANS: "1"
+preparacion_zypp_conexiones: 10
+preparacion_zypp_refresh_delay: 1440
+preparacion_repos_desactivar: "non-oss|debug|source|openh264"
+
+preparacion_roles: "{{ ansible_play_role_names | unique | reject('equalto', 'preparacion') | list }}"
+preparacion_todos_paquetes: >-
+  {{ (preparacion_paquetes_base + query('vars', *(preparacion_roles | map('regex_replace', '$', '_paquetes')), default=[]))
+     | flatten | unique }}
+preparacion_todos_servicios_fw: >-
+  {{ query('vars', *(preparacion_roles | map('regex_replace', '$', '_firewall_servicios')), default=[]) | flatten | unique }}
+preparacion_todos_puertos_fw: >-
+  {{ query('vars', *(preparacion_roles | map('regex_replace', '$', '_firewall_puertos')), default=[]) | flatten | unique }}
+preparacion_todos_booleanos: >-
+  {{ query('vars', *(preparacion_roles | map('regex_replace', '$', '_selinux_booleanos')), default=[]) | flatten | unique }}
+
+mysql_paquetes:
+  - "{{ mysql_package }}"
+samba_paquetes:
+  - "{{ samba_package }}"
+samba_firewall_servicios:
+  - samba
+samba_selinux_booleanos:
+  - samba_enable_home_dirs

@@ -1,11 +1,11 @@
 ---
-- name: "[PGSQL] Iniciar y habilitar PostgreSQL (initdb automatico)"
+- name: "Iniciar y habilitar PostgreSQL (initdb automatico)"
   ansible.builtin.systemd_service:
     name: "{{ postgresql_servicio }}"
     state: started
     enabled: true
 
-- name: "[PGSQL] Generar certificado SSL autofirmado (solo la primera vez)"
+- name: "Generar certificado SSL autofirmado (solo la primera vez)"
   ansible.builtin.shell: |
     set -e
     umask 077
@@ -19,7 +19,7 @@
     creates: "{{ postgresql_data }}/server.crt"
   notify: Reiniciar postgresql
 
-- name: copiar archivo postgresql.conf
+- name: Copiar archivo postgresql.conf
   ansible.builtin.copy:
     src: ../../postgresql.conf
     dest: /var/lib/pgsql/data/postgresql.conf
@@ -28,7 +28,7 @@
     mode: '0644'
   notify: Reiniciar postgresql
 
-- name: copiar archivo pg_hba.conf
+- name: Copiar archivo pg_hba.conf
   ansible.builtin.copy:
     src: ../../pg_hba.conf
     dest: /var/lib/pgsql/data/pg_hba.conf
@@ -37,7 +37,7 @@
     mode: '0644'
   notify: Reiniciar postgresql
 
-- name: "[PGSQL] Clave de postgres + usuario y base de la aplicacion"
+- name: "Clave de postgres + usuario y base de la aplicacion"
   ansible.builtin.command:
     cmd: runuser -u postgres -- psql -X -v ON_ERROR_STOP=1 -d postgres
     chdir: /

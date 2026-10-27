@@ -1,5 +1,6 @@
 [servidor]
-ansible_host=192.168.0.12
+aso_suse1 ansible_host=10.42.99.123
+aso_suse2 ansible_host=10.42.99.201
 
 [servidor:vars]
 ansible_user=root

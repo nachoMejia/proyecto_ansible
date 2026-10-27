@@ -1,8 +1,3 @@
-- name: Instalar apache2
-  zypper:
-    name: "{{ apache2_package }}"
-    state: present
-
 - name: iniciar y habilitar desde el arranque apache
   systemd:
     name: "{{ apache2_service }}"

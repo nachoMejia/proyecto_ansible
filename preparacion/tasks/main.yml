@@ -1,0 +1,100 @@
+# Rol preparacion - unico rol de base, se ejecuta antes que los servicios
+# 1. Libera zypper (PackageKit) y lo optimiza (sin docs, sin recomendados, paralelo)
+# 2. Desactiva repos innecesarios y refresca una sola vez
+# 3. Instala los paquetes de TODOS los roles en una sola transaccion
+# 4. Aplica booleanos SELinux y abre el firewall en una sola pasada
+---
+- name: "[PREP] Detener y enmascarar PackageKit"
+  ansible.builtin.systemd_service:
+    name: packagekit
+    state: stopped
+    masked: true
+  failed_when: false
+
+- name: "[PREP] Terminar procesos de zypper/PackageKit colgados"
+  ansible.builtin.command: pkill -9 -x {{ item }}
+  loop: [packagekitd, zypper]
+  register: prep_pkill
+  changed_when: prep_pkill.rc == 0
+  failed_when: false
+
+- name: "[PREP] Quitar bloque viejo de zypp.conf"
+  ansible.builtin.blockinfile:
+    path: /etc/zypp/zypp.conf
+    marker: "# {mark} ANSIBLE - optimizacion deploy"
+    state: absent
+
+- name: "[PREP] Optimizar zypp.conf"
+  ansible.builtin.blockinfile:
+    path: /etc/zypp/zypp.conf
+    create: true
+    mode: "0644"
+    marker: "# {mark} ANSIBLE - preparacion"
+    block: |
+      [main]
+      rpm.install.excludedocs = yes
+      solver.onlyRequires = true
+      download.use_deltarpm = false
+      download.max_concurrent_connections = {{ preparacion_zypp_conexiones }}
+      repo.refresh.delay = {{ preparacion_zypp_refresh_delay }}
+
+- name: "[PREP] Desactivar repositorios innecesarios"
+  ansible.builtin.shell: |
+    zypper -x lr | grep 'enabled="1"' | grep -oP 'alias="\K[^"]+' \
+      | grep -iE '{{ preparacion_repos_desactivar }}' \
+      | while read -r r; do zypper -q mr -d "$r" && echo "DESACTIVADO $r"; done
+  args:
+    executable: /bin/bash
+  register: prep_repos
+  changed_when: "'DESACTIVADO' in prep_repos.stdout"
+  failed_when: false
+
+- name: "[PREP] Refrescar una sola vez los repositorios activos"
+  ansible.builtin.command: zypper -n --gpg-auto-import-keys refresh
+  register: prep_refresh
+  until: prep_refresh.rc == 0
+  retries: 3
+  delay: 5
+  changed_when: false
+
+- name: "[PREP] Instalar TODOS los paquetes en una sola transaccion"
+  community.general.zypper:
+    name: "{{ preparacion_todos_paquetes }}"
+    state: present
+    disable_recommends: true
+  environment: "{{ preparacion_zypper_env }}"
+  register: prep_install
+  until: prep_install is succeeded
+  retries: 2
+  delay: 5
+
+- name: "[PREP] SELinux - activar booleanos en una sola transaccion"
+  ansible.builtin.shell: |
+    selinuxenabled 2>/dev/null || { echo "SELINUX_OFF"; exit 0; }
+    pend=""
+    for b in {{ preparacion_todos_booleanos | join(' ') }}; do
+      getsebool "$b" 2>/dev/null | grep -q -- '--> off' && pend="$pend $b=on"
+    done
+    [ -z "$pend" ] && exit 0
+    setsebool -P $pend && echo "CAMBIOS $pend"
+  args:
+    executable: /bin/bash
+  register: prep_selinux
+  changed_when: "'CAMBIOS' in prep_selinux.stdout"
+  when: preparacion_todos_booleanos | length > 0
+
+- name: "[PREP] Firewall - abrir servicios y puertos en una sola pasada"
+  ansible.builtin.shell: |
+    systemctl is-active --quiet firewalld || { echo "FIREWALLD_OFF"; exit 0; }
+    c=0
+    for s in {{ preparacion_todos_servicios_fw | join(' ') }}; do
+      firewall-cmd -q --permanent --query-service="$s" || { firewall-cmd -q --permanent --add-service="$s" && c=1; }
+    done
+    for p in {{ preparacion_todos_puertos_fw | join(' ') }}; do
+      firewall-cmd -q --permanent --query-port="$p" || { firewall-cmd -q --permanent --add-port="$p" && c=1; }
+    done
+    [ "$c" -eq 1 ] && firewall-cmd -q --reload && echo "CAMBIOS"; exit 0
+  args:
+    executable: /bin/bash
+  register: prep_firewall
+  changed_when: "'CAMBIOS' in prep_firewall.stdout"
